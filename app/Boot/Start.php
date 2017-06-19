@@ -1,18 +1,17 @@
 <?php
+
 /**
  * Boot Handler - perform the Application's boot stage.
  *
  * @author Virgil-Adrian Teaca - virgil@giulianaeassociati.com
  * @version 3.0
  */
-
 use Nova\Config\EnvironmentVariables;
 use Nova\Config\Repository as ConfigRepository;
 use Nova\Foundation\AliasLoader;
 use Nova\Foundation\Application;
 use Nova\Http\Request;
 use Nova\Support\Facades\Facade;
-
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 //--------------------------------------------------------------------------
@@ -32,20 +31,20 @@ session_cache_limiter('');
 //--------------------------------------------------------------------------
 
 if (function_exists('mb_internal_encoding')) {
-    mb_internal_encoding('utf-8');
+   mb_internal_encoding('utf-8');
 }
 
 //--------------------------------------------------------------------------
 // Set The System Path
 //--------------------------------------------------------------------------
 
-define('SYSTEMDIR', ROOTDIR .str_replace('/', DS, 'vendor/nova-framework/system/'));
+define('SYSTEMDIR', ROOTDIR . str_replace('/', DS, 'vendor/nova-framework/system/'));
 
 //--------------------------------------------------------------------------
 // Set The Storage Path
 //--------------------------------------------------------------------------
 
-define('STORAGE_PATH', ROOTDIR .'storage' .DS);
+define('STORAGE_PATH', ROOTDIR . 'storage' . DS);
 
 //--------------------------------------------------------------------------
 // Set The Framework Version
@@ -57,9 +56,10 @@ define('VERSION', Application::VERSION);
 // Load Global Configuration
 //--------------------------------------------------------------------------
 
-$path = APPDIR .'Config.php';
+$path = APPDIR . 'Config.php';
 
-if (is_readable($path)) require $path;
+if (is_readable($path))
+   require $path;
 
 //--------------------------------------------------------------------------
 // Create New Application
@@ -72,18 +72,18 @@ $app = new Application();
 //--------------------------------------------------------------------------
 
 $env = $app->detectEnvironment(array(
-    'local' => array('darkstar'),
-));
+   'local' => array('darkstar'),
+   ));
 
 //--------------------------------------------------------------------------
 // Bind Paths
 //--------------------------------------------------------------------------
 
 $paths = array(
-    'base'    => ROOTDIR,
-    'app'     => APPDIR,
-    'public'  => PUBLICDIR,
-    'storage' => STORAGE_PATH,
+   'base' => ROOTDIR,
+   'app' => APPDIR,
+   'public' => PUBLICDIR,
+   'storage' => STORAGE_PATH,
 );
 
 $app->bindInstallPaths($paths);
@@ -113,7 +113,7 @@ $app->registerCoreContainerAliases();
 //--------------------------------------------------------------------------
 
 with($envVariables = new EnvironmentVariables(
-    $app->getEnvironmentVariablesLoader()
+   $app->getEnvironmentVariablesLoader()
 ))->load($env);
 
 //--------------------------------------------------------------------------
@@ -121,7 +121,7 @@ with($envVariables = new EnvironmentVariables(
 //--------------------------------------------------------------------------
 
 $app->instance('config', $config = new ConfigRepository(
-    $app->getConfigLoader(), $env
+   $app->getConfigLoader(), $env
 ));
 
 //--------------------------------------------------------------------------
@@ -130,7 +130,8 @@ $app->instance('config', $config = new ConfigRepository(
 
 $app->startExceptionHandling();
 
-if ($env != 'testing') ini_set('display_errors', 'Off');
+if ($env != 'testing')
+   ini_set('display_errors', 'Off');
 
 //--------------------------------------------------------------------------
 // Set The Default Timezone From Configuration
@@ -173,32 +174,32 @@ $app->getProviderRepository()->load($app, $providers);
 //--------------------------------------------------------------------------
 
 App::middleware('Shared\Http\ContentGuard', array(
-    $app['config']['app.debug']
+   $app['config']['app.debug']
 ));
 
 //--------------------------------------------------------------------------
 // Register Booted Start Files
 //--------------------------------------------------------------------------
 
-$app->booted(function() use ($app, $env)
-{
+$app->booted(function() use ($app, $env) {
 
 //--------------------------------------------------------------------------
 // Load The Application Start Script
 //--------------------------------------------------------------------------
 
-$path = $app['path'] .DS .'Boot' .DS .'Global.php';
+   $path = $app['path'] . DS . 'Boot' . DS . 'Global.php';
 
-if (is_readable($path)) require $path;
+   if (is_readable($path))
+      require $path;
 
 //--------------------------------------------------------------------------
 // Load The Environment Start Script
 //--------------------------------------------------------------------------
 
-$path = $app['path'] .DS .'Boot' .DS .'Environment' .DS .ucfirst($env) .'.php';
+   $path = $app['path'] . DS . 'Boot' . DS . 'Environment' . DS . ucfirst($env) . '.php';
 
-if (is_readable($path)) require $path;
-
+   if (is_readable($path))
+      require $path;
 });
 
 //--------------------------------------------------------------------------
