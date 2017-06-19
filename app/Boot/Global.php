@@ -4,49 +4,45 @@
 // Application Error Logger
 //--------------------------------------------------------------------------
 
-Log::useFiles(STORAGE_PATH .'logs' .DS .'error.log');
+Log::useFiles(STORAGE_PATH . 'logs' . DS . 'error.log');
 
 //--------------------------------------------------------------------------
 // Application Error Handler
 //--------------------------------------------------------------------------
-
 // The standard handling of the Exceptions.
-App::error(function(Exception $exception, $code)
-{
-    Log::error($exception);
+App::error(function(Exception $exception, $code) {
+   Log::error($exception);
 });
 
 // Special handling for the HTTP Exceptions.
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-App::error(function(HttpException $exception)
-{
-    $code = $exception->getStatusCode();
+App::error(function(HttpException $exception) {
+   $code = $exception->getStatusCode();
 
-    $headers = $exception->getHeaders();
+   $headers = $exception->getHeaders();
 
-    if (Request::ajax()) {
-        // An AJAX request; we'll create a JSON Response.
-        $content = array('status' => $code);
+   if (Request::ajax()) {
+      // An AJAX request; we'll create a JSON Response.
+      $content = array('status' => $code);
 
-        return Response::json($content, $code, $headers);
-    }
+      return Response::json($content, $code, $headers);
+   }
 
-    // We'll create the templated Error Page Response.
-    $view = View::makeLayout('Default')
-        ->shares('title', 'Error ' .$code)
-        ->nest('content', 'Error/' .$code);
+   // We'll create the templated Error Page Response.
+   $view = View::makeLayout('Minimal')
+      ->shares('title', 'Error ' . $code)
+      ->nest('content', 'Error/' . $code);
 
-    return Response::make($view, $code, $headers);
+   return Response::make($view, $code, $headers);
 });
 
 //--------------------------------------------------------------------------
 // Maintenance Mode Handler
 //--------------------------------------------------------------------------
 
-App::down(function()
-{
-    return Response::make("Be right back!", 503);
+App::down(function() {
+   return Response::make("Be right back!", 503);
 });
 
 //--------------------------------------------------------------------------
