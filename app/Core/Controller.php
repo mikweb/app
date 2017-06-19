@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Controller - base controller
+ * Controller - A backend Controller for the included example Modules.
  *
  * @author Virgil-Adrian Teaca - virgil@giulianaeassociati.com
  * @version 3.0
@@ -8,144 +9,80 @@
 
 namespace App\Core;
 
-use Nova\Foundation\Auth\Access\AuthorizeRequestsTrait;
-use Nova\Foundation\Validation\ValidateRequestsTrait;
-use Nova\Routing\Controller as BaseController;
-use Nova\Support\Contracts\RenderableInterface as Renderable;
+use Nova\Http\Request;
+use Nova\Routing\Route;
+use Nova\Support\Facades\Auth;
 use Nova\Support\Facades\Config;
-use Nova\Support\Facades\Response;
+use Nova\Support\Facades\Event;
+use Nova\Support\Facades\Redirect;
 use Nova\Support\Facades\View;
-use Nova\View\Layout;
+use App\Core\AppController;
 
-use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+abstract class Controller extends AppController {
 
-use BadMethodCallException;
+   /**
+    * A Before Filter which permit the access to Administrators.
+    */
+   public function adminUsersFilter(Route $route, Request $request, $guard = null) {
+      $guard = $guard ?: Config::get('auth.defaults.guard', 'web');
 
+      // Check the User Authorization.
+      $user = Auth::guard($guard)->user();
 
-abstract class Controller extends BaseController
-{
-    use AuthorizeRequestsTrait, ValidateRequestsTrait;
+      $status = __('You are not authorized to access this resource.');
 
-    /**
-     * The currently used Theme.
-     *
-     * @var string
-     */
-    protected $theme = null;
+      if (!is_null($user) && !$user->admin()) {
+         $status = __('You are not authorized to access this resource.');
+         return Redirect::to('admin/dashboard')->withStatus($status, 'warning');
+      }
 
-    /**
-     * The currently used Layout.
-     *
-     * @var string
-     */
-    protected $layout = 'Default';
+      //if (is_null($user)) {
+      //   return Redirect::to('login')->withStatus($status, 'warning');
+      //} elseif (!$user->admin()) {
+      //   return Redirect::to('/')->withStatus($status, 'warning');
+      //}
+   }
 
+   /**
+    * Method executed before any action.
+    */
+   protected function before() {
+      // Setup the Menus
+      $user = Auth::user();
 
-    /**
-     * Create a new Controller instance.
-     */
-    public function __construct()
-    {
-        // Setup the used Theme to default, if it is not already defined.
-        if (! isset($this->theme)) {
-            $this->theme = Config::get('app.theme', 'Bootstrap');
-        }
-    }
+      View::share('menuMain', $this->getMenuItems($user, 'menu.main'));
+      View::share('menuMainOnePage', $this->getMenuItems($user, 'menu.mainOnePage'));
+      View::share('menuMainAdmin', $this->getMenuItems($user, 'menu.mainAdmin'));
+      View::share('menuMainRoot', $this->getMenuItems($user, 'menu.mainRoot'));
+   }
 
-    /**
-     * Method executed after any action.
-     *
-     * @param mixed  $response
-     *
-     * @return \Symfony\Component\HttpFoundation\Response
-     */
-    protected function after($response)
-    {
-        if ($response instanceof Renderable) {
-            // If the response which is returned from the called Action is a Renderable instance,
-            // we will assume we want to render it using the Controller's themed environment.
+   protected function getMenuItems($user, $menuName) {
 
-            if ((! $response instanceof Layout) && is_string($this->layout) && ! empty($this->layout)) {
-                $response = $this->getLayout()->with('content', $response);
-            }
+      //if (is_null($user)) {
+      //   // The User is not authenticated.
+      //   return array();
+      //}
+      // Prepare the Event payload.
+      $payload = array($user);
 
-            // Create and return a proper Response instance.
-            $content = $response->render();
+      // Fire the Event 'backend.menu' and store the results.
+      $results = Event::fire($menuName, $payload);
 
-            return Response::make($content);
-        }
+      // Merge all results on a menu items array.
+      $items = array();
 
-        return parent::after($response);
-    }
+      foreach ($results as $result) {
+         if (is_array($result) && !empty($result)) {
+            $items = array_merge($items, $result);
+         }
+      }
 
-    /**
-     * Return a default View instance.
-     *
-     * @return \Nova\View\View
-     * @throws \BadMethodCallException
-     */
-    protected function getView(array $data = array())
-    {
-        // Get the currently called method.
-        $method = $this->getMethod();
+      // Sort the menu items by their weight and title.
+      $items = array_sort($items, function($value) {
+         return $value['weight'] . ' - ' . (isset($value['title']) ? $value['title'] : '');
+      });
 
-         // Transform the complete class name on a path like variable.
-        $path = str_replace('\\', '/', static::class);
-
-        // Check for a valid controller on Application.
-        if (preg_match('#^App/Controllers/(.*)$#i', $path, $matches)) {
-            $view = $matches[1] .'/' .ucfirst($method);
-
-            return View::make($view, $data, '', $this->theme);
-        }
-
-        // Retrieve the Modules namespace from their configuration.
-        $namespace = Config::get('modules.namespace', 'App\Modules\\');
-
-        // Transform the Modules namespace on a path like variable.
-        $basePath = str_replace('\\', '/', rtrim($namespace, '\\'));
-
-        // Check for a valid controller on Modules.
-        if (preg_match('#^'. $basePath .'/(.+)/Controllers/(.*)$#i', $path, $matches)) {
-            $module = $matches[1];
-
-            $view = $matches[2] .'/' .ucfirst($method);
-
-            return View::make($view, $data, $module, $this->theme);
-        }
-
-        // If we arrived there, the called class is not a Controller; go Exception.
-        throw new BadMethodCallException('Invalid Controller namespace: ' .static::class);
-    }
-
-    /**
-     * Return the current Theme name.
-     *
-     * @return string
-     */
-    public function getTheme()
-    {
-        return $this->theme;
-    }
-
-    /**
-     * Return a Layout instance.
-     *
-     * @return \View\Layout
-     */
-    public function getLayout()
-    {
-        return View::createLayout($this->layout, $this->theme);
-    }
-
-    /**
-     * Return the current Layout name.
-     *
-     * @return string
-     */
-    public function getLayoutName()
-    {
-        $this->layout;
-    }
+      return $items;
+   }
 
 }
