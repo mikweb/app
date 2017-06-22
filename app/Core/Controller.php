@@ -33,7 +33,7 @@ abstract class Controller extends AppController {
 
       if (!is_null($user) && !$user->admin()) {
          $status = __('You are not authorized to access this resource.');
-         return Redirect::to('admin/dashboard')->withStatus($status, 'warning');
+         return Redirect::to('/')->withStatus($status, 'warning');
       }
 
       //if (is_null($user)) {
