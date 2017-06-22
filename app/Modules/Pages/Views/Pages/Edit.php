@@ -12,7 +12,7 @@
        <?= Menu::tab($menu, ['id' => $page->id]) ?>
       <div class="tab-content m">
          <div class="tab-pane fade active in" id="tab-x">
-            <form class="form-horizontal margin" action="<?= site_url("pages") ?>" method="post" enctype="multipart/form-data">
+            <form class="form-horizontal margin" action="<?= site_url("pages/" . $page->id) ?>" method="post" enctype="multipart/form-data">
                <input type="hidden" name="csrfToken" value="<?= $csrfToken ?>">
                <div class="form-group">
                   <label class="col-sm-3 control-label" for="type"><?= __d('pages', 'Page Type') ?></label>
