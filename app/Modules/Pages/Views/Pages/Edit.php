@@ -110,7 +110,7 @@
                </div>
                <div class="form-group">
                   <div class="col-sm-9 col-sm-push-3 margin-t">
-                     <button type="submit" class="btn btn-primary" name="submit"><span class="mdi mdi-check"></span> <?= __('Submit') ?></button>
+                     <button type="submit" class="btn btn-primary" name="submit"><span class="mdi mdi-check"></span> <?= __('Save') ?></button>
                      <a class="btn btn-danger modal-delete" href="<?= site_url('pages/' . $page->id . '/destroy') ?>"><span class="mdi mdi-delete"></span> <?= __("Delete Page") ?></a>
                      <a class="btn" href="<?= site_url("pages") ?>"><span class="mdi mdi-keyboard-backspace"></span> <?= __('Back') ?> </a>
                   </div>
